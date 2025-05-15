@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Siparişi Tamamla{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <h2>Siparişi Tamamla</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="checkout-content">
+        <div class="order-summary">
+            <h3>Sipariş Özeti</h3>
+            <div class="restaurant-info">
+                <h4>{{ restaurant.restaurant_name }}</h4>
+            </div>
+            
+            <div class="order-items">
+                <table class="order-table">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Adet</th>
+                            <th>Fiyat</th>
+                            <th>Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr>
+                                <td>{{ item.menu_item.item_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ "%.2f"|format(item.menu_item.price) }} TL</td>
+                                <td>{{ "%.2f"|format(item.item_total) }} TL</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right"><strong>Toplam Tutar:</strong></td>
+                            <td><strong>{{ "%.2f"|format(total) }} TL</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        
+        <div class="delivery-info">
+            <h3>Teslimat Bilgileri</h3>
+            <form action="{{ url_for('place_order') }}" method="POST">
+                <div class="form-group">
+                    <label for="address">Teslimat Adresi:</label>
+                    <select id="address_select" onchange="document.getElementById('address').value = this.value">
+                        <option value="">-- Adres Seçin --</option>
+                        {% for addr in addresses %}
+                            <option value="{{ addr.address_line }}" {% if addr.is_default %}selected{% endif %}>
+                                {{ addr.address_line }}{% if addr.is_default %} (Varsayılan){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <br><br>
+
+                    <textarea name="address" id="address" rows="3" required>{{ default_address }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment_method">Ödeme Yöntemi:</label>
+                    <select name="payment_method" id="payment_method" required onchange="toggleCreditCardOptions()">
+                        <option value="cash">Kapıda Ödeme</option>
+                        <option value="credit_card">Kredi Kartı</option>
+                    </select>
+                </div>
+                
+                <!-- Credit Card Selection Area - Hidden by Default -->
+                <div id="credit_card_options" class="form-group" style="display: none;">
+                    {% if credit_cards %}
+                        <label for="credit_card_id">Kayıtlı Kartlarınız:</label>
+                        <div class="saved-cards-list">
+                            {% for card in credit_cards %}
+                                <div class="card-option">
+                                    <input type="radio" name="credit_card_id" id="card_{{ card.id }}" value="{{ card.id }}" 
+                                           {% if card.is_default %}checked{% endif %} required>
+                                    <label for="card_{{ card.id }}" class="card-label">
+                                        <div class="card-info">
+                                            <span class="card-type">
+                                                {% if card.card_number.startswith('4') %}
+                                                    Visa
+                                                {% elif card.card_number.startswith('5') %}
+                                                    MasterCard
+                                                {% elif card.card_number.startswith('3') %}
+                                                    Amex
+                                                {% else %}
+                                                    Kredi Kartı
+                                                {% endif %}
+                                            </span>
+                                            <span class="card-number">**** **** **** {{ card.last_four }}</span>
+                                            <span class="card-expiry">Son Kullanma: {{ card.expiry_month }}/{{ card.expiry_year }}</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="add-new-card-option">
+                            <a href="{{ url_for('credit_cards') }}" class="btn btn-outline">Yeni Kart Ekle</a>
+                        </div>
+                    {% else %}
+                        <div class="no-cards-message">
+                            <p>Kayıtlı kredi kartınız bulunmamaktadır.</p>
+                            <a href="{{ url_for('credit_cards') }}" class="btn btn-primary">Kredi Kartı Ekle</a>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Sipariş Notu (İsteğe Bağlı):</label>
+                    <textarea name="notes" id="notes" rows="2"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-large">Siparişi Onayla</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="back-link">
+        <a href="{{ url_for('view_cart') }}" class="btn btn-secondary">← Sepete Dön</a>
+    </div>
+</div>
+
+<style>
+    .checkout-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .checkout-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-top: 20px;
+    }
+    
+    .order-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    
+    .order-table th, .order-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .text-right {
+        text-align: right;
+    }
+    
+    .back-link {
+        margin-top: 30px;
+    }
+    
+    /* Credit Card Selection Styles */
+    .saved-cards-list {
+        margin-bottom: 15px;
+    }
+    
+    .card-option {
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 2px;
+    }
+    
+    .card-option input[type="radio"] {
+        display: none;
+    }
+    
+    .card-option input[type="radio"]:checked + .card-label {
+        background-color: #f8f9fa;
+        border-color: #e74c3c;
+    }
+    
+    .card-label {
+        display: block;
+        padding: 10px 15px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+    
+    .card-label:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .card-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card-type {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .add-new-card-option {
+        margin-top: 10px;
+    }
+    
+    .no-cards-message {
+        text-align: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    
+    @media (max-width: 768px) {
+        .checkout-content {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    // Function to toggle credit card options based on payment method selection
+    function toggleCreditCardOptions() {
+        const paymentMethod = document.getElementById('payment_method').value;
+        const creditCardOptions = document.getElementById('credit_card_options');
+        
+        if (paymentMethod === 'credit_card') {
+            creditCardOptions.style.display = 'block';
+            
+            // If there are cards, make sure at least one is selected
+            const cardRadios = document.querySelectorAll('input[name="credit_card_id"]');
+            if (cardRadios.length > 0) {
+                let hasChecked = false;
+                cardRadios.forEach(radio => {
+                    if (radio.checked) hasChecked = true;
+                });
+                
+                if (!hasChecked) {
+                    cardRadios[0].checked = true;
+                }
+            }
+        } else {
+            creditCardOptions.style.display = 'none';
+        }
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleCreditCardOptions();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}YemekSepeti{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Added Font Awesome for cart icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1><a href="/">YemekSepeti</a></h1>
+        <nav>
+            <a href="/">Ana Sayfa</a>
+            
+            {% if session.logged_in %}
+                {% if session.user_type == 'user' %}
+                <a href="{{ url_for('cart') }}">Sepetim</a>
+                <a href="{{ url_for('list_addresses') }}">Adreslerim</a>
+                <a href="{{ url_for('credit_cards') }}">Kredi Kartlarım</a>
+                <a href="{{ url_for('user_orders') }}">Siparişlerim</a>
+                {% elif session.user_type == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}">Admin Paneli</a>
+                {% elif session.user_type == 'delivery' %}
+                    <a href="{{ url_for('delivery_dashboard') }}">Kurye Paneli</a>
+                {% elif session.user_type == 'restaurant' %}
+                    <a href="{{ url_for('restaurant_dashboard') }}">Restoran Paneli</a>
+                {% endif %}
+                
+                <!-- Kullanıcı adını göster ve çıkış seçeneği ekle -->
+                <span class="user-greeting">Merhaba, {{ session.name }}</span>
+                <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+            {% else %}
+                <!-- Giriş yapmamış kullanıcılar için -->
+                <a href="{{ url_for('login') }}">Giriş Yap</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 YemekSepeti Clone</p>
+    </footer>
+</body>
+</html>

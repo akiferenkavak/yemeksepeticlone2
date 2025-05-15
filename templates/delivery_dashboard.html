@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Kurye Paneli{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <h2>Kurye Kontrol Paneli</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="admin-menu">
+        <h3>İşlemler</h3>
+        <ul>
+            <li><a href="{{ url_for('available_orders') }}">📦 Uygun Siparişler</a></li>
+            <li><a href="{{ url_for('delivery_orders') }}">✅ Üstlendiğim Siparişler</a></li>
+            <li><a href="{{ url_for('edit_delivery_profile') }}">⚙ Profil Bilgilerini Düzenle</a></li>
+        </ul>
+    </div>
+    
+    <div class="pending-restaurants">
+        <h3>Durum Bilgisi</h3>
+        {% if delivery_person and delivery_person.is_approved %}
+            <p class="status-approved">Kurye durumu: Onaylandı</p>
+            <div class="availability-status">
+                {% if delivery_person and delivery_person.is_available %}
+                    <p class="status-available">Çalışma durumu: Müsait</p>
+                    <a href="{{ url_for('toggle_availability') }}" class="btn btn-warning">Müsait Değil Olarak İşaretle</a>
+                {% else %}
+                    <p class="status-unavailable">Çalışma durumu: Müsait Değil</p>
+                    <a href="{{ url_for('toggle_availability') }}" class="btn btn-success">Müsait Olarak İşaretle</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="status-pending">Kurye durumu: Onay bekleniyor...</p>
+        {% endif %}
+    </div>
+    
+    <div class="current-assignments">
+        <h3>Atanmış Siparişler</h3>
+        {% if assigned_orders %}
+            <ul>
+                {% for order in assigned_orders %}
+                    <li>
+                        Sipariş #{{ order.id }} - {{ order.restaurant.name }} 
+                        <a href="{{ url_for('order_details', order_id=order.id) }}">Detayları Görüntüle</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Şu anda üzerinize atanmış sipariş bulunmamaktadır.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
